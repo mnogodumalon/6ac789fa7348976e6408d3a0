@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "Lagerorte": {
+      "placeholders_set": 5,
+      "defaults_keys": [],
+      "computed_keys": [],
+      "reason": "Lagerorte sind reine Stammdaten ohne Zahlen- oder Datumsfelder, daher gibt es keine Formeln oder Standardwerte."
+    },
+    "Lieferanten": {
+      "placeholders_set": 9,
+      "defaults_keys": [],
+      "computed_keys": [],
+      "reason": "Lieferanten sind reine Stammdaten ohne numerische Felder, daher keine Formeln oder Standardwerte."
+    },
+    "Inventar": {
+      "placeholders_set": 14,
+      "defaults_keys": [
+        "anschaffungsdatum",
+        "zustand"
+      ],
+      "computed_keys": [],
+      "reason": "Keine Formeln, da Bestand und Preis Stammdaten sind und kein Datumspaar oder Preis über Verknüpfung berechenbar ist."
+    },
+    "Ausgaben": {
+      "placeholders_set": 8,
+      "defaults_keys": [
+        "menge",
+        "ausgabedatum",
+        "geplantes_rueckgabedatum",
+        "status"
+      ],
+      "computed_keys": [
+        "_ausgabe_wert",
+        "_ausgabe_dauer_tage"
+      ],
+      "reason": "Der Wert der Ausgabe ergibt sich aus Menge mal Anschaffungspreis des Gegenstands, die geplante Ausleihdauer aus dem Datumspaar, beides als virtuelle Summenzeilen."
+    }
+  }
+}

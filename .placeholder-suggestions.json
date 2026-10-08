@@ -1,0 +1,46 @@
+{
+  "LagerorteDialog.tsx": {
+    "bezeichnung": "z. B. Hauptlager Regal A",
+    "bereich": "z. B. Halle 2",
+    "regal": "z. B. R-12",
+    "fach": "z. B. Fach 3",
+    "bemerkung": "Hinweise zum Lagerort"
+  },
+  "LieferantenDialog.tsx": {
+    "firmenname": "z. B. Müller Werkzeuge GmbH",
+    "ansprechpartner_vorname": "z. B. Anna",
+    "ansprechpartner_nachname": "z. B. Schmidt",
+    "email": "z. B. info@mueller-werkzeuge.de",
+    "strasse": "z. B. Hauptstraße",
+    "hausnummer": "z. B. 12a",
+    "postleitzahl": "z. B. 80331",
+    "ort": "z. B. München",
+    "webseite": "z. B. https://www.beispiel.de"
+  },
+  "InventarDialog.tsx": {
+    "bezeichnung": "z. B. Akkuschrauber",
+    "inventarnummer": "z. B. INV-2026-001",
+    "kategorie": "z. B. Werkzeug, Maschine",
+    "hersteller": "z. B. Bosch",
+    "modell": "z. B. GSR 18V-55",
+    "seriennummer": "z. B. SN-123456",
+    "anschaffungsdatum": "Wann wurde es angeschafft?",
+    "anschaffungspreis": "z. B. 249,90",
+    "bestand": "z. B. 5",
+    "mindestbestand": "z. B. 2",
+    "lagerort": "Welcher Lagerort?",
+    "lieferant": "Welcher Lieferant?",
+    "naechste_pruefung": "Wann ist die nächste Prüfung?",
+    "bemerkung": "Notizen zum Gegenstand"
+  },
+  "AusgabenDialog.tsx": {
+    "gegenstand": "Welcher Gegenstand?",
+    "person_vorname": "z. B. Thomas",
+    "person_nachname": "z. B. Müller",
+    "menge": "z. B. 2",
+    "ausgabedatum": "Wann wurde es ausgegeben?",
+    "geplantes_rueckgabedatum": "Wann soll es zurückkommen?",
+    "tatsaechliches_rueckgabedatum": "Wann kam es zurück?",
+    "bemerkung": "Notizen zur Ausgabe"
+  }
+}

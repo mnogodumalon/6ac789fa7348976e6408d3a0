@@ -1,0 +1,228 @@
+{
+  "version": 1,
+  "language": "de",
+  "understanding": {
+    "summary": "Die Anwendung verwaltet das Inventar der Werkstatt: Werkzeuge, Maschinen, Messmittel und Verbrauchsmaterial mit Lagerort, Lieferant, Bestand und Zustand. Ausgaben halten fest, wer wann was entnommen hat und ob es zurückgegeben wurde.",
+    "roles": [
+      "Werkstattleitung",
+      "Mitarbeitende der Werkstatt"
+    ],
+    "main_tasks": [
+      "Inventar erfassen und pflegen",
+      "Gegenstände an Personen ausgeben und Rückgabe verbuchen",
+      "Bestand und Mindestbestand im Blick behalten",
+      "Fällige Prüfungen und überfällige Rückgaben erkennen",
+      "Lagerorte und Lieferanten verwalten"
+    ],
+    "platform_roles": [
+      {
+        "persona": "Werkstattleitung",
+        "role": "administrator",
+        "apps": [
+          "inventar",
+          "ausgaben",
+          "lagerorte",
+          "lieferanten"
+        ]
+      },
+      {
+        "persona": "Mitarbeitende der Werkstatt",
+        "role": "standard",
+        "apps": [
+          "inventar",
+          "ausgaben",
+          "lagerorte",
+          "lieferanten"
+        ]
+      }
+    ]
+  },
+  "flows": [
+    {
+      "slug": "gegenstand-ausgeben",
+      "label": {
+        "de": "Gegenstand ausgeben",
+        "en": "Issue item"
+      },
+      "description": "Einen Gegenstand aus dem Inventar an eine Person ausgeben, mit Prüfung des Bestands.",
+      "priority": "must",
+      "writes": [
+        {
+          "entity": "ausgaben",
+          "op": "create",
+          "when": "always",
+          "fields": {
+            "gegenstand": "picked",
+            "person_vorname": "user",
+            "person_nachname": "user",
+            "menge": "user",
+            "ausgabedatum": "derived:today",
+            "geplantes_rueckgabedatum": "user",
+            "status": "fixed:ausgegeben",
+            "bemerkung": "user"
+          },
+          "needs": {}
+        },
+        {
+          "entity": "inventar",
+          "op": "update",
+          "when": "always",
+          "fields": {
+            "bestand": "derived:minus_quantity"
+          },
+          "needs": {}
+        }
+      ],
+      "required": [],
+      "brief": "# Flow `gegenstand-ausgeben` — Gegenstand ausgeben\nEinen Gegenstand aus dem Inventar an eine Person ausgeben, mit Prüfung des Bestands.\n\n## Your hook — import it, never rebuild what it owns\n`import { useGegenstandAusgebenFlow } from '@/lib/journey/flows/GegenstandAusgeben';` — generated from the Schreibliste below. It OWNS the form(s), one record search per picked field (columns and filter from the plan) and the submit plan with every fixed and derived value. You compose: `flow.forms.<entity>` for <Bound>/<Field>, `{...flow.picks.<field>.select} {...flow.pick('<field>')}` (or `flow.pickMany` for a multi pick) for <EntitySelectStep>, `flow.validateStep(n)` in StepNav.onNext, `flow.submit` + `flow.formList` for SummaryStep/SuccessStep, `flow.reset()`; what the hook does not own reads through its door `flow.port` — availability `useOccupancy(flow.port, '<entity>', { resource })`, a count `useRecordCount(flow.port, …)` — never import servicePort next to the hook. Options: `steps` (field → step), `items` (how a hit reads, per pick: gegenstand), `initial`, `messages`, and `compute` — REQUIRED, the plan leaves these rules to you: bestand. The hook's docblock in .lane-context.md shows the exact call. This flow CHANGES a record of `inventar`: `{...flow.picks.inventar.select} {...flow.pick('inventar')}` picks it, the hook prefills the form with its current values and updates THAT record — never a create step, never a list from useDashboardData. Never import servicePort, useStepForm, useJourneySubmit, useRecordSearch or useDashboardData in this page — check-intents refuses a page that uses the hook and any of them.\n\n## Steps (in this order)\n1. Gegenstand aus dem Inventar wählen\n2. Name der Person und Menge eingeben\n3. Geplantes Rückgabedatum angeben\n4. Ausgabe speichern\n\n## Schreibliste — the ONLY writes this flow makes (the gate compares your plan steps with this list)\n- creates `ausgaben`:\n    - `gegenstand`: from the record the user picks in this flow\n    - `person_vorname`: the user enters it (bind it through the layer: form.field/…)\n    - `person_nachname`: the user enters it (bind it through the layer: form.field/…)\n    - `menge`: the user enters it (bind it through the layer: form.field/…)\n    - `ausgabedatum`: derived: today() — set it in the plan step, never ask\n    - `geplantes_rueckgabedatum`: the user enters it (bind it through the layer: form.field/…)\n    - `status`: fixed value `ausgegeben` — set it in the plan step's values, never ask\n    - `bemerkung`: the user enters it (bind it through the layer: form.field/…)\n- updates `inventar`:\n    - `bestand`: derived: decremented by the quantity — a tool does this, not the flow\n\n## Reads\n- `inventar` columns bezeichnung, inventarnummer, kategorie, bestand, zustand, lagerort\n\n## Checks BEFORE the write (block the submit with the message when they fail)\n- stock_sufficient (stock=`inventar.bestand`, quantity=`ausgaben.menge`) — message: „Der Bestand reicht für diese Menge nicht aus.“\n\n## Success page\n- shows: `ausgaben.gegenstand`, `ausgaben.geplantes_rueckgabedatum`\n- next flows to offer: `rueckgabe-verbuchen`\n\n## Never write these — another flow or a tool owns them\n- `ausgaben.tatsaechliches_rueckgabedatum` (owner: intent `rueckgabe-verbuchen`)\n- `inventar.zustand` (owner: intent `rueckgabe-verbuchen`)\n- `inventar.bezeichnung` (owner: intent `gegenstand-erfassen`)\n- `inventar.inventarnummer` (owner: intent `gegenstand-erfassen`)\n- `inventar.kategorie` (owner: intent `gegenstand-erfassen`)\n- `inventar.hersteller` (owner: intent `gegenstand-erfassen`)\n- `inventar.modell` (owner: intent `gegenstand-erfassen`)\n- `inventar.seriennummer` (owner: intent `gegenstand-erfassen`)\n- `inventar.anschaffungsdatum` (owner: intent `gegenstand-erfassen`)\n- `inventar.anschaffungspreis` (owner: intent `gegenstand-erfassen`)\n- `inventar.mindestbestand` (owner: intent `gegenstand-erfassen`)\n- `inventar.lagerort` (owner: intent `gegenstand-erfassen`)\n- `inventar.lieferant` (owner: intent `gegenstand-erfassen`)\n- `inventar.naechste_pruefung` (owner: intent `gegenstand-erfassen`)\n"
+    },
+    {
+      "slug": "rueckgabe-verbuchen",
+      "label": {
+        "de": "Rückgabe verbuchen",
+        "en": "Record return"
+      },
+      "description": "Eine ausgegebene Ausgabe als zurückgegeben markieren und den Bestand wieder erhöhen.",
+      "priority": "must",
+      "writes": [
+        {
+          "entity": "ausgaben",
+          "op": "update",
+          "when": "always",
+          "fields": {
+            "tatsaechliches_rueckgabedatum": "derived:today",
+            "status": "fixed:zurueckgegeben"
+          },
+          "needs": {}
+        },
+        {
+          "entity": "inventar",
+          "op": "update",
+          "when": "always",
+          "fields": {
+            "bestand": "derived:computed:Bestand plus die zurückgegebene Menge der gewählten Ausgabe",
+            "zustand": "user"
+          },
+          "needs": {}
+        }
+      ],
+      "required": [],
+      "brief": "# Flow `rueckgabe-verbuchen` — Rückgabe verbuchen\nEine ausgegebene Ausgabe als zurückgegeben markieren und den Bestand wieder erhöhen.\n\n## Your hook — import it, never rebuild what it owns\n`import { useRueckgabeVerbuchenFlow } from '@/lib/journey/flows/RueckgabeVerbuchen';` — generated from the Schreibliste below. It OWNS the form(s), one record search per picked field (columns and filter from the plan) and the submit plan with every fixed and derived value. You compose: `flow.forms.<entity>` for <Bound>/<Field>, `{...flow.picks.<field>.select} {...flow.pick('<field>')}` (or `flow.pickMany` for a multi pick) for <EntitySelectStep>, `flow.validateStep(n)` in StepNav.onNext, `flow.submit` + `flow.formList` for SummaryStep/SuccessStep, `flow.reset()`; what the hook does not own reads through its door `flow.port` — availability `useOccupancy(flow.port, '<entity>', { resource })`, a count `useRecordCount(flow.port, …)` — never import servicePort next to the hook. Options: `steps` (field → step), `items` (how a hit reads, per pick), `initial`, `messages`, and `compute` — REQUIRED, the plan leaves these rules to you: bestand. The hook's docblock in .lane-context.md shows the exact call. This flow CHANGES a record of `ausgaben`: `{...flow.picks.ausgaben.select} {...flow.pick('ausgaben')}` picks it, the hook prefills the form with its current values and updates THAT record — never a create step, never a list from useDashboardData. This flow CHANGES a record of `inventar`: `{...flow.picks.inventar.select} {...flow.pick('inventar')}` picks it, the hook prefills the form with its current values and updates THAT record — never a create step, never a list from useDashboardData. Never import servicePort, useStepForm, useJourneySubmit, useRecordSearch or useDashboardData in this page — check-intents refuses a page that uses the hook and any of them.\n\n## Steps (in this order)\n1. Offene Ausgabe wählen\n2. Zustand des Gegenstands prüfen und angeben\n3. Rückgabe bestätigen\n\n## Schreibliste — the ONLY writes this flow makes (the gate compares your plan steps with this list)\n- updates `ausgaben`:\n    - `tatsaechliches_rueckgabedatum`: derived: today() — set it in the plan step, never ask\n    - `status`: fixed value `zurueckgegeben` — set it in the plan step's values, never ask\n- updates `inventar`:\n    - `bestand`: derived (computed)\n    - `zustand`: the user enters it (bind it through the layer: form.field/…)\n\n## Reads\n- `ausgaben` columns gegenstand, person_vorname, person_nachname, menge, ausgabedatum, geplantes_rueckgabedatum, status\n\n## Success page\n- shows: `ausgaben.status`, `inventar.bestand`\n- next flows to offer: `gegenstand-ausgeben`\n\n## Never write these — another flow or a tool owns them\n- `ausgaben.gegenstand` (owner: intent `gegenstand-ausgeben`)\n- `ausgaben.person_vorname` (owner: intent `gegenstand-ausgeben`)\n- `ausgaben.person_nachname` (owner: intent `gegenstand-ausgeben`)\n- `ausgaben.menge` (owner: intent `gegenstand-ausgeben`)\n- `ausgaben.ausgabedatum` (owner: intent `gegenstand-ausgeben`)\n- `ausgaben.geplantes_rueckgabedatum` (owner: intent `gegenstand-ausgeben`)\n- `ausgaben.bemerkung` (owner: intent `gegenstand-ausgeben`)\n- `inventar.bezeichnung` (owner: intent `gegenstand-erfassen`)\n- `inventar.inventarnummer` (owner: intent `gegenstand-erfassen`)\n- `inventar.kategorie` (owner: intent `gegenstand-erfassen`)\n- `inventar.hersteller` (owner: intent `gegenstand-erfassen`)\n- `inventar.modell` (owner: intent `gegenstand-erfassen`)\n- `inventar.seriennummer` (owner: intent `gegenstand-erfassen`)\n- `inventar.anschaffungsdatum` (owner: intent `gegenstand-erfassen`)\n- `inventar.anschaffungspreis` (owner: intent `gegenstand-erfassen`)\n- `inventar.mindestbestand` (owner: intent `gegenstand-erfassen`)\n- `inventar.lagerort` (owner: intent `gegenstand-erfassen`)\n- `inventar.lieferant` (owner: intent `gegenstand-erfassen`)\n- `inventar.naechste_pruefung` (owner: intent `gegenstand-erfassen`)\n"
+    },
+    {
+      "slug": "gegenstand-erfassen",
+      "label": {
+        "de": "Gegenstand erfassen",
+        "en": "Add item"
+      },
+      "description": "Einen neuen Gegenstand mit Lagerort und Lieferant ins Inventar aufnehmen.",
+      "priority": "must",
+      "writes": [
+        {
+          "entity": "inventar",
+          "op": "create",
+          "when": "always",
+          "fields": {
+            "bezeichnung": "user",
+            "inventarnummer": "user",
+            "kategorie": "user",
+            "hersteller": "user",
+            "modell": "user",
+            "seriennummer": "user",
+            "anschaffungsdatum": "user",
+            "anschaffungspreis": "user",
+            "bestand": "user",
+            "mindestbestand": "user",
+            "zustand": "user",
+            "lagerort": "picked",
+            "lieferant": "picked",
+            "naechste_pruefung": "user"
+          },
+          "needs": {}
+        }
+      ],
+      "required": [],
+      "brief": "# Flow `gegenstand-erfassen` — Gegenstand erfassen\nEinen neuen Gegenstand mit Lagerort und Lieferant ins Inventar aufnehmen.\n\n## Your hook — import it, never rebuild what it owns\n`import { useGegenstandErfassenFlow } from '@/lib/journey/flows/GegenstandErfassen';` — generated from the Schreibliste below. It OWNS the form(s), one record search per picked field (columns and filter from the plan) and the submit plan with every fixed and derived value. You compose: `flow.forms.<entity>` for <Bound>/<Field>, `{...flow.picks.<field>.select} {...flow.pick('<field>')}` (or `flow.pickMany` for a multi pick) for <EntitySelectStep>, `flow.validateStep(n)` in StepNav.onNext, `flow.submit` + `flow.formList` for SummaryStep/SuccessStep, `flow.reset()`; what the hook does not own reads through its door `flow.port` — availability `useOccupancy(flow.port, '<entity>', { resource })`, a count `useRecordCount(flow.port, …)` — never import servicePort next to the hook. Options: `steps` (field → step), `items` (how a hit reads, per pick: lagerort, lieferant), `initial`, `messages`. The hook's docblock in .lane-context.md shows the exact call. Never import servicePort, useStepForm, useJourneySubmit, useRecordSearch or useDashboardData in this page — check-intents refuses a page that uses the hook and any of them.\n\n## Steps (in this order)\n1. Bezeichnung und Kategorie eingeben\n2. Lagerort und Lieferant wählen\n3. Bestand, Mindestbestand und Zustand angeben\n4. Gegenstand speichern\n\n## Schreibliste — the ONLY writes this flow makes (the gate compares your plan steps with this list)\n- creates `inventar`:\n    - `bezeichnung`: the user enters it (bind it through the layer: form.field/…)\n    - `inventarnummer`: the user enters it (bind it through the layer: form.field/…)\n    - `kategorie`: the user enters it (bind it through the layer: form.field/…)\n    - `hersteller`: the user enters it (bind it through the layer: form.field/…)\n    - `modell`: the user enters it (bind it through the layer: form.field/…)\n    - `seriennummer`: the user enters it (bind it through the layer: form.field/…)\n    - `anschaffungsdatum`: the user enters it (bind it through the layer: form.field/…)\n    - `anschaffungspreis`: the user enters it (bind it through the layer: form.field/…)\n    - `bestand`: the user enters it (bind it through the layer: form.field/…)\n    - `mindestbestand`: the user enters it (bind it through the layer: form.field/…)\n    - `zustand`: the user enters it (bind it through the layer: form.field/…)\n    - `lagerort`: from the record the user picks in this flow\n    - `lieferant`: from the record the user picks in this flow\n    - `naechste_pruefung`: the user enters it (bind it through the layer: form.field/…)\n\n## Reads\n- `lagerorte` columns bezeichnung, bereich, regal, fach\n- `lieferanten` columns firmenname, ort\n\n## Success page\n- shows: `inventar.bezeichnung`, `inventar.lagerort`\n- next flows to offer: `gegenstand-ausgeben`\n\n## Never write these — another flow or a tool owns them\n- `ausgaben.gegenstand` (owner: intent `gegenstand-ausgeben`)\n- `ausgaben.person_vorname` (owner: intent `gegenstand-ausgeben`)\n- `ausgaben.person_nachname` (owner: intent `gegenstand-ausgeben`)\n- `ausgaben.menge` (owner: intent `gegenstand-ausgeben`)\n- `ausgaben.ausgabedatum` (owner: intent `gegenstand-ausgeben`)\n- `ausgaben.geplantes_rueckgabedatum` (owner: intent `gegenstand-ausgeben`)\n- `ausgaben.status` (owner: intent `gegenstand-ausgeben`)\n- `ausgaben.bemerkung` (owner: intent `gegenstand-ausgeben`)\n- `ausgaben.tatsaechliches_rueckgabedatum` (owner: intent `rueckgabe-verbuchen`)\n"
+    }
+  ],
+  "public_pages": [],
+  "tools": [
+    {
+      "id": "ueberfaellige-ausgaben-markieren",
+      "purpose": "Täglich: Ausgaben mit Status „Ausgegeben“, deren geplantes Rückgabedatum vor heute liegt, werden auf „Überfällig“ gesetzt."
+    },
+    {
+      "id": "mindestbestand-warnung-mailen",
+      "purpose": "Werktags: eine Sammelmail an das Team mit allen Gegenständen, deren Bestand unter dem Mindestbestand liegt. Der Vergleich Bestand gegen Mindestbestand erfolgt im Code."
+    },
+    {
+      "id": "pruefungen-erinnerung-mailen",
+      "purpose": "Wöchentlich: eine Sammelmail mit allen Gegenständen, deren nächste Prüfung in den nächsten 30 Tagen fällig ist oder bereits überschritten wurde."
+    }
+  ],
+  "covered_by_platform": [
+    {
+      "wish": "Inventar erfassen, ansehen und bearbeiten",
+      "feature": "record_form"
+    },
+    {
+      "wish": "Inventar durchsuchen und filtern",
+      "feature": "search_filter"
+    },
+    {
+      "wish": "Übersicht des Inventars je Kategorie oder Zustand",
+      "feature": "distribution_view"
+    },
+    {
+      "wish": "Inventarliste als Tabelle oder Excel",
+      "feature": "csv_json_export"
+    },
+    {
+      "wish": "Fotos und Dokumente zu Gegenständen",
+      "feature": "record_attachments"
+    }
+  ],
+  "ownership": {
+    "ausgaben": {
+      "gegenstand": "intent:gegenstand-ausgeben",
+      "person_vorname": "intent:gegenstand-ausgeben",
+      "person_nachname": "intent:gegenstand-ausgeben",
+      "menge": "intent:gegenstand-ausgeben",
+      "ausgabedatum": "intent:gegenstand-ausgeben",
+      "geplantes_rueckgabedatum": "intent:gegenstand-ausgeben",
+      "status": "tool:ueberfaellige-ausgaben-markieren",
+      "bemerkung": "intent:gegenstand-ausgeben",
+      "tatsaechliches_rueckgabedatum": "intent:rueckgabe-verbuchen"
+    },
+    "inventar": {
+      "bestand": "intent:gegenstand-erfassen",
+      "zustand": "intent:gegenstand-erfassen",
+      "bezeichnung": "intent:gegenstand-erfassen",
+      "inventarnummer": "intent:gegenstand-erfassen",
+      "kategorie": "intent:gegenstand-erfassen",
+      "hersteller": "intent:gegenstand-erfassen",
+      "modell": "intent:gegenstand-erfassen",
+      "seriennummer": "intent:gegenstand-erfassen",
+      "anschaffungsdatum": "intent:gegenstand-erfassen",
+      "anschaffungspreis": "intent:gegenstand-erfassen",
+      "mindestbestand": "intent:gegenstand-erfassen",
+      "lagerort": "intent:gegenstand-erfassen",
+      "lieferant": "intent:gegenstand-erfassen",
+      "naechste_pruefung": "intent:gegenstand-erfassen"
+    }
+  },
+  "dashboard": {
+    "focus": [
+      "Gegenstände unter Mindestbestand",
+      "Aktuell ausgegebene und überfällige Ausgaben",
+      "Anstehende Prüfungen",
+      "Gegenstände defekt oder reparaturbedürftig"
+    ],
+    "hints": [
+      "Bestand im Vergleich zum Mindestbestand zeigen",
+      "Überfällige Rückgaben hervorheben",
+      "Prüftermine der nächsten 30 Tage auflisten"
+    ],
+    "wishes": []
+  }
+}
